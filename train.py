@@ -10,7 +10,8 @@ from PIL import Image
 import cv2
 import numpy as np
 from matplotlib import pyplot as plt
-
+from sklearn.metrics import confusion_matrix
+import seaborn as sns
 
 
 gpus = tf.config.experimental.list_physical_devices('CPU')
@@ -93,14 +94,30 @@ pre = Precision()
 re = Recall()
 acc = BinaryAccuracy()
 
+y_true = []
+y_pred = []
+
 for batch in test.as_numpy_iterator():
     X, y = batch
     yhat = model.predict(X)
     pre.update_state(y, yhat)
     re.update_state(y, yhat)
     acc.update_state(y, yhat)
+    y_true.extend(y)
+    y_pred.extend(np.round(yhat).flatten())
     
 print(f'Precision:{pre.result().numpy()}, Recall:{re.result().numpy()}, Accuracy:{acc.result().numpy()}')
+
+
+cm = confusion_matrix(y_true, y_pred)
+plt.figure(figsize=(8, 6))
+sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=['Negative', 'Positive'], yticklabels=['Negative', 'Positive'])
+plt.xlabel('Predicted')
+plt.ylabel('True')
+plt.title('Confusion Matrix')
+plt.show()
+
+
 model.save(os.path.join('models', 'overloadedVehicles.keras'))
 
 
